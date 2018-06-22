@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { addSequence, uploadSequenceResource } from "./api";
 import Earth from "./Earth";
+import ProgressModal from "./ProgressModal";
 
 class AddSequence extends Component {
   state = {
@@ -13,7 +14,8 @@ class AddSequence extends Component {
     time: "",
     tab: "text",
     form_error: false,
-    file_error: false
+    file_error: false,
+    is_sumbitting: false
   };
 
   handleFormSubmit = async e => {
@@ -33,10 +35,12 @@ class AddSequence extends Component {
       TIME: this.state.time
     };
     try {
+      this.setState({ is_sumbitting: true });
       if (this.state.file_error === false) {
         var { data } = await addSequence(payload);
+        console.log(data);
         if (data.result !== "true") {
-          this.setState({ form_error: true });
+          this.setState({ form_error: true, is_sumbitting: false });
           return;
         }
       }
@@ -45,14 +49,14 @@ class AddSequence extends Component {
         fd.append("LOCAL_IMAGE", this.state.localimg);
         var response = await uploadSequenceResource(data.id, fd);
         if (response.data.result !== "true") {
-          this.setState({ file_error: true });
+          this.setState({ file_error: true, is_sumbitting: false });
           return;
         }
       }
       this.props.history.push(`/scenarios/${this.props.match.params.id}`);
     } catch (e) {
       console.log(e);
-      this.setState({ form_error: true });
+      this.setState({ form_error: true, is_sumbitting: false });
     }
   };
 
@@ -219,6 +223,7 @@ class AddSequence extends Component {
           </div>
 
           <input className="btn btn-primary" type="submit" value="作成" />
+          <ProgressModal isOpen={this.state.is_sumbitting} />
         </form>
       </div>
     );

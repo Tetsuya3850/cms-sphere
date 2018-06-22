@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { getSequence, updateSequence, uploadSequenceResource } from "./api";
 import Earth from "./Earth";
+import ProgressModal from "./ProgressModal";
 
 class EditSequence extends Component {
   state = {
@@ -14,7 +15,8 @@ class EditSequence extends Component {
     time: "",
     tab: "text",
     load_error: false,
-    form_error: false
+    form_error: false,
+    is_sumbitting: false
   };
 
   async componentDidMount() {
@@ -59,12 +61,13 @@ class EditSequence extends Component {
       TIME: this.state.time
     };
     try {
+      this.setState({ is_sumbitting: true });
       const { data } = await updateSequence(
         this.props.match.params.id,
         payload
       );
       if (data.result !== "true") {
-        this.setState({ form_error: true });
+        this.setState({ form_error: true, is_sumbitting: false });
         return;
       }
       if (this.state.localtext !== "" || this.state.localimg !== "") {
@@ -75,14 +78,14 @@ class EditSequence extends Component {
           fd
         );
         if (response.data.result !== "true") {
-          this.setState({ file_error: true });
+          this.setState({ file_error: true, is_sumbitting: false });
           return;
         }
       }
       this.props.history.push(`/scenarios/${this.state.scenario_id}`);
     } catch (e) {
       console.log(e);
-      this.setState({ form_error: true });
+      this.setState({ form_error: true, is_sumbitting: false });
     }
   };
 
@@ -261,6 +264,7 @@ class EditSequence extends Component {
           </div>
 
           <input className="btn btn-primary" type="submit" value="更新" />
+          <ProgressModal isOpen={this.state.is_sumbitting} />
         </form>
       </div>
     );
