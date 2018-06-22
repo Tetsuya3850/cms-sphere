@@ -1,16 +1,33 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { getScenarios } from "./api";
-import DeleteModal from "./DeleteModal";
+import ScenarioCard from "./ScenarioCard";
+import Loader from "./Loader/Loader";
 
 class Scenarios extends Component {
   state = {
-    scenarios: []
+    isFetching: false,
+    scenarios: [],
+    error: false
   };
 
   async componentDidMount() {
-    const { data } = await getScenarios();
-    this.setState({ scenarios: data.scenarios });
+    try {
+      this.setState({ isFetching: true });
+      const { data } = await getScenarios();
+      if (data.result === "true") {
+        this.setState({
+          scenarios: data.scenarios,
+          isFetching: false,
+          error: false
+        });
+      } else {
+        this.setState({ error: true });
+      }
+    } catch (e) {
+      this.setState({ error: true });
+      console.log(e);
+    }
   }
 
   removeScenario = id => {
@@ -30,54 +47,33 @@ class Scenarios extends Component {
         >
           新規作成
         </Link>
-        {this.state.scenarios.map(scenario => (
-          <div className="card card-body" key={scenario.ID}>
-            <div className="row">
-              <div
-                className="col-sm-6"
-                style={{ display: "flex", justifyContent: "center" }}
-              >
-                <div
-                  className="col-sm-8"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-around",
-                    alignItems: "flex-end"
-                  }}
-                >
-                  <span style={{ fontSize: "20px" }}>{scenario.TITLE}</span>
-                  <span style={{ fontSize: "16px" }}>{`by ${
-                    scenario.CREDIT
-                  }`}</span>
-                </div>
-              </div>
 
-              <div
-                className="col-sm-6"
-                style={{ display: "flex", justifyContent: "center" }}
-              >
-                <div
-                  className="col-sm-5"
-                  style={{ display: "flex", justifyContent: "space-around" }}
-                >
-                  <Link
-                    to={`/scenarios/${scenario.ID}`}
-                    role="button"
-                    style={{ color: "white" }}
-                    className="btn btn-secondary"
-                  >
-                    編集
-                  </Link>
-                  <DeleteModal
-                    type="scenario"
-                    id={scenario.ID}
-                    remove={() => this.removeScenario(scenario.ID)}
+        <div
+          className="alert alert-danger"
+          style={{ display: this.state.error ? "block" : "none" }}
+        >
+          エラー：申し訳ありません。リロードしてみてください。
+        </div>
+
+        {this.state.isFetching ? (
+          <Loader />
+        ) : (
+          <div>
+            {this.state.scenarios.length !== 0 ? (
+              <div>
+                {this.state.scenarios.map(scenario => (
+                  <ScenarioCard
+                    key={scenario.ID}
+                    scenario={scenario}
+                    removeScenario={() => this.removeScenario(scenario.ID)}
                   />
-                </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <p style={{ textAlign: "center" }}>まだシナリオがありません。</p>
+            )}
           </div>
-        ))}
+        )}
       </div>
     );
   }

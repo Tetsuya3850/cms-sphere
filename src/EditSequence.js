@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { getSequence, updateSequence } from "./api";
+import { getSequence, updateSequence, uploadSequenceResource } from "./api";
 import Earth from "./Earth";
 
 class EditSequence extends Component {
@@ -9,21 +9,37 @@ class EditSequence extends Component {
     latitude: "",
     localtext: "",
     localimg: "",
+    preview_url: "",
+    previous_url: "",
     time: "",
-    tab: "text"
+    tab: "text",
+    load_error: false,
+    form_error: false
   };
 
   async componentDidMount() {
-    const { data } = await getSequence(this.props.match.params.id);
-    var sequence = data.sequences[0];
-    var [longitude, latitude] = sequence.ROTATE_TO.split(",");
-    this.setState({
-      scenario_id: sequence.SCENARIO_ID,
-      longitude,
-      latitude,
-      localtext: sequence.LOCAL_TEXT,
-      time: sequence.TIME
-    });
+    try {
+      const { data } = await getSequence(this.props.match.params.id);
+      if (data.result !== "true") {
+        this.setState({ load_error: true });
+        return;
+      }
+      var sequence = data.sequences[0];
+      var [longitude, latitude] = sequence.ROTATE_TO.split(",");
+      this.setState({
+        scenario_id: sequence.SCENARIO_ID,
+        longitude,
+        latitude,
+        localtext: sequence.LOCAL_TEXT,
+        preview_url: sequence.LOCAL_IMAGE,
+        previous_url: sequence.LOCAL_IMAGE,
+        time: sequence.TIME,
+        tab: sequence.LOCAL_IMAGE === "" ? "text" : "img"
+      });
+    } catch (e) {
+      console.log(e);
+      this.setState({ load_error: true });
+    }
   }
 
   handleFormSubmit = async e => {
@@ -37,7 +53,7 @@ class EditSequence extends Component {
       LOCAL_TEXT: this.state.localtext,
       LOCAL_TEXT_WHY: "",
       LOCAL_TEXT_HOW: "",
-      LOCAL_IMAGE: "",
+      LOCAL_IMAGE: this.state.previous_url,
       LOCAL_VIDEO: "",
       LOCAL_SOUND: "",
       TIME: this.state.time
@@ -47,20 +63,26 @@ class EditSequence extends Component {
         this.props.match.params.id,
         payload
       );
-      this.props.history.push(`/scenarios/${this.state.scenario_id}`);
-    } catch (e) {
-      if (!e.response) {
-        console.log(e);
+      if (data.result !== "true") {
+        this.setState({ form_error: true });
         return;
       }
-    }
-  };
-
-  onDescriptionTabClick = tab => {
-    if (tab === "text") {
-      this.setState({ tab, localimg: "" });
-    } else {
-      this.setState({ tab, localtext: "" });
+      if (this.state.localtext !== "" || this.state.localimg !== "") {
+        let fd = new FormData();
+        fd.append("LOCAL_IMAGE", this.state.localimg);
+        let response = await uploadSequenceResource(
+          this.props.match.params.id,
+          fd
+        );
+        if (response.data.result !== "true") {
+          this.setState({ file_error: true });
+          return;
+        }
+      }
+      this.props.history.push(`/scenarios/${this.state.scenario_id}`);
+    } catch (e) {
+      console.log(e);
+      this.setState({ form_error: true });
     }
   };
 
@@ -69,6 +91,22 @@ class EditSequence extends Component {
       <div id="formContainer" className="container card card-body">
         <form onSubmit={this.handleFormSubmit}>
           <h3>シーケンス案</h3>
+
+          <div
+            className="alert alert-danger"
+            style={{ display: this.state.load_error ? "block" : "none" }}
+          >
+            エラー：申し訳ありません。リロードしてください。
+          </div>
+
+          <div
+            className="alert alert-danger"
+            style={{
+              display: this.state.form_error ? "block" : "none"
+            }}
+          >
+            エラー：申し訳ありません。もう一度送信してください。
+          </div>
 
           <div
             className="form-group row"
@@ -129,7 +167,7 @@ class EditSequence extends Component {
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.onDescriptionTabClick("text")}
+                  onClick={() => this.setState({ tab: "text" })}
                 >
                   説明テキスト
                 </div>
@@ -140,37 +178,69 @@ class EditSequence extends Component {
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.onDescriptionTabClick("img")}
+                  onClick={() => this.setState({ tab: "img" })}
                 >
                   説明画像
                 </div>
               </div>
             </nav>
             <div className="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
-              {this.state.tab === "text" ? (
-                <div role="tabpanel">
-                  <textarea
-                    className="form-control"
-                    rows="4"
-                    value={this.state.localtext}
-                    onChange={e => {
-                      this.setState({ localtext: e.target.value });
-                    }}
-                    maxLength="1000"
-                  />
-                </div>
-              ) : (
-                <div role="tabpanel">
-                  <input
-                    type="file"
-                    name="pic"
-                    accept="image/*"
-                    onChange={e => {
-                      this.setState({ localimg: e.target.files[0] });
-                    }}
-                  />
-                </div>
-              )}
+              <div
+                role="tabpanel"
+                style={{
+                  display: this.state.tab === "text" ? "block" : "none"
+                }}
+              >
+                <textarea
+                  className="form-control"
+                  rows="4"
+                  value={this.state.localtext}
+                  onChange={e => {
+                    this.file.value = null;
+                    this.setState({
+                      localtext: e.target.value,
+                      localimg: "",
+                      preview_url: ""
+                    });
+                  }}
+                  maxLength="1000"
+                />
+              </div>
+              <div
+                role="tabpanel"
+                style={{
+                  display: this.state.tab === "img" ? "block" : "none"
+                }}
+              >
+                <input
+                  ref={node => {
+                    this.file = node;
+                  }}
+                  type="file"
+                  name="pic"
+                  accept="image/*"
+                  onChange={e => {
+                    var file = e.target.files[0];
+                    var preview_url = window.URL.createObjectURL(file);
+                    this.setState({
+                      localimg: file,
+                      preview_url,
+                      localtext: ""
+                    });
+                  }}
+                />
+                <br />
+                <img
+                  id="upload"
+                  alt="upload preview"
+                  src={this.state.preview_url}
+                  width="50%"
+                  style={{
+                    display: this.state.preview_url === "" ? "none" : "block",
+                    marginTop: 10
+                  }}
+                />
+              </div>
             </div>
           </div>
 

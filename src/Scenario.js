@@ -1,15 +1,33 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { getSequences } from "./api";
-import DeleteModal from "./DeleteModal";
+import SequenceCard from "./SequenceCard";
+import Loader from "./Loader/Loader";
 
 class Scenario extends Component {
   state = {
-    sequences: []
+    isFetching: false,
+    sequences: [],
+    error: false
   };
+
   async componentDidMount() {
-    const { data } = await getSequences(this.props.match.params.id);
-    this.setState({ sequences: data.sequences });
+    try {
+      this.setState({ isFetching: true });
+      const { data } = await getSequences(this.props.match.params.id);
+      if (data.result === "true") {
+        this.setState({
+          sequences: data.sequences,
+          isFetching: false,
+          error: false
+        });
+      } else {
+        this.setState({ error: true });
+      }
+    } catch (e) {
+      this.setState({ error: true });
+      console.log(e);
+    }
   }
 
   removeSequence = id => {
@@ -27,7 +45,7 @@ class Scenario extends Component {
           style={{ color: "white", marginBottom: "10px", marginRight: "10px" }}
           className="btn btn-primary"
         >
-          新規作成
+          新規シーケンス作成
         </Link>
         <Link
           to={`/scenario/edit/${this.props.match.params.id}`}
@@ -37,56 +55,35 @@ class Scenario extends Component {
         >
           シナリオ編集
         </Link>
-        {this.state.sequences.map(sequence => (
-          <div className="card card-body" key={sequence.ID}>
-            <div className="row">
-              <div
-                className="col-sm-6"
-                style={{ display: "flex", justifyContent: "center" }}
-              >
-                <div
-                  className="col-sm-8"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-around",
-                    alignItems: "flex-end"
-                  }}
-                >
-                  <span style={{ fontSize: "20px" }}>
-                    {sequence.LOCAL_TEXT}
-                  </span>
-                  <span style={{ fontSize: "16px" }}>
-                    {sequence.LAYER1_INDEX}
-                  </span>
-                </div>
-              </div>
 
-              <div
-                className="col-sm-6"
-                style={{ display: "flex", justifyContent: "center" }}
-              >
-                <div
-                  className="col-sm-5"
-                  style={{ display: "flex", justifyContent: "space-around" }}
-                >
-                  <Link
-                    to={`/sequence/edit/${sequence.ID}`}
-                    role="button"
-                    style={{ color: "white" }}
-                    className="btn btn-secondary"
-                  >
-                    編集
-                  </Link>
-                  <DeleteModal
-                    type="sequence"
-                    id={sequence.ID}
-                    remove={() => this.removeSequence(sequence.ID)}
+        <div
+          className="alert alert-danger"
+          style={{ display: this.state.error ? "block" : "none" }}
+        >
+          エラー：申し訳ありません。リロードしてみてください。
+        </div>
+
+        {this.state.isFetching ? (
+          <Loader />
+        ) : (
+          <div>
+            {this.state.sequences.length !== 0 ? (
+              <div>
+                {this.state.sequences.map(sequence => (
+                  <SequenceCard
+                    key={sequence.ID}
+                    sequence={sequence}
+                    removeSequence={() => this.removeSequence(sequence.ID)}
                   />
-                </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <p style={{ textAlign: "center" }}>
+                まだシーケンスがありません。
+              </p>
+            )}
           </div>
-        ))}
+        )}
       </div>
     );
   }

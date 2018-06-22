@@ -4,13 +4,13 @@ import { postScenario } from "./api";
 class AddScenario extends Component {
   state = {
     title: "",
-    credit: ""
+    credit: "",
+    form_error: false
   };
 
   handleFormSubmit = async e => {
     e.preventDefault();
     const payload = {
-      CATEGORY: "CMS",
       TITLE: this.state.title,
       CREDIT: this.state.credit,
       YEAR: "",
@@ -19,20 +19,14 @@ class AddScenario extends Component {
     };
     try {
       const { data } = await postScenario(payload);
-      this.props.history.push(`/scenarios/${data.id}`);
-    } catch (e) {
-      if (!e.response) {
-        console.log(e);
-        return;
+      if (data.result === "true") {
+        this.setState({ form_error: false });
+        this.props.history.push(`/scenarios/${data.id}`);
+      } else {
+        this.setState({ form_error: true });
       }
-    }
-  };
-
-  onDescriptionTabClick = tab => {
-    if (tab === "text") {
-      this.setState({ tab, localimg: "" });
-    } else {
-      this.setState({ tab, localtext: "" });
+    } catch (e) {
+      console.log(e);
     }
   };
 
@@ -41,6 +35,13 @@ class AddScenario extends Component {
       <div id="formContainer" className="container card card-body">
         <form onSubmit={this.handleFormSubmit}>
           <h3>シナリオ案</h3>
+
+          <div
+            className="alert alert-danger"
+            style={{ display: this.state.form_error ? "block" : "none" }}
+          >
+            エラー：申し訳ありません。もう一度送信してください。
+          </div>
 
           <div className="form-group">
             <label>タイトル</label>

@@ -31,31 +31,55 @@ class DeleteModal extends Component {
           onRequestClose={this.closeModal}
           style={styles}
         >
-          <div style={innerStyles.container}>
-            <p>本当に削除しますか？</p>
-            <p onClick={this.closeModal} style={innerStyles.close}>
-              X
-            </p>
-          </div>
-          <form onSubmit={this.handleFormSubmit}>
-            <div
-              className="btn btn-danger"
-              style={{ color: "white" }}
-              onClick={() => {
-                if (this.props.type === "scenario") {
-                  deleteScenario(this.props.id);
-                  this.props.remove();
-                  this.closeModal();
-                } else {
-                  deleteSequence(this.props.id);
-                  this.props.remove();
-                  this.closeModal();
-                }
-              }}
-            >
-              削除
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">本当に削除しますか？</h5>
+              <button
+                type="button"
+                className="close"
+                data-dismiss="modal"
+                aria-label="Close"
+                onClick={this.closeModal}
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
-          </form>
+            <div className="modal-body">
+              <p>一度削除したデータは取り戻せません。</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={async () => {
+                  try {
+                    if (this.props.type === "scenario") {
+                      var { data } = await deleteScenario(this.props.id);
+                    } else {
+                      var { data } = await deleteSequence(this.props.id);
+                    }
+                  } catch (e) {
+                    console.log(e);
+                    return;
+                  }
+                  if (data.result === "true") {
+                    this.props.remove();
+                    this.closeModal();
+                  }
+                }}
+              >
+                はい
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-dismiss="modal"
+                onClick={this.closeModal}
+              >
+                いいえ
+              </button>
+            </div>
+          </div>
         </Modal>
       </div>
     );
@@ -68,25 +92,12 @@ const styles = {
   content: {
     top: "10%",
     left: "50%",
-    right: "80%",
+    right: "auto",
     bottom: "auto",
     marginRight: "-50%",
-    transform: "translate(-50%)"
-  }
-};
-
-const innerStyles = {
-  container: {
-    display: "flex",
-    justifyContent: "space-between"
-  },
-  close: {
-    cursor: "pointer"
-  },
-  text: {
-    width: "100%",
-    margin: "10px 0px",
-    fontSize: "14px"
+    transform: "translate(-50%)",
+    padding: "0",
+    border: "none"
   }
 };
 

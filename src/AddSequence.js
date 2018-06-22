@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { addSequence } from "./api";
+import { addSequence, uploadSequenceResource } from "./api";
 import Earth from "./Earth";
 
 class AddSequence extends Component {
@@ -9,8 +9,11 @@ class AddSequence extends Component {
     latitude: "",
     localtext: "",
     localimg: "",
+    img_url: "",
     time: "",
-    tab: "text"
+    tab: "text",
+    form_error: false,
+    file_error: false
   };
 
   handleFormSubmit = async e => {
@@ -30,21 +33,26 @@ class AddSequence extends Component {
       TIME: this.state.time
     };
     try {
-      const { data } = await addSequence(payload);
+      if (this.state.file_error === false) {
+        var { data } = await addSequence(payload);
+        if (data.result !== "true") {
+          this.setState({ form_error: true });
+          return;
+        }
+      }
+      if (this.state.localimg !== "") {
+        let fd = new FormData();
+        fd.append("LOCAL_IMAGE", this.state.localimg);
+        var response = await uploadSequenceResource(data.id, fd);
+        if (response.data.result !== "true") {
+          this.setState({ file_error: true });
+          return;
+        }
+      }
       this.props.history.push(`/scenarios/${this.props.match.params.id}`);
     } catch (e) {
-      if (!e.response) {
-        console.log(e);
-        return;
-      }
-    }
-  };
-
-  onDescriptionTabClick = tab => {
-    if (tab === "text") {
-      this.setState({ tab, localimg: "" });
-    } else {
-      this.setState({ tab, localtext: "" });
+      console.log(e);
+      this.setState({ form_error: true });
     }
   };
 
@@ -53,6 +61,18 @@ class AddSequence extends Component {
       <div id="formContainer" className="container card card-body">
         <form onSubmit={this.handleFormSubmit}>
           <h3>シーケンス案</h3>
+
+          <div
+            className="alert alert-danger"
+            style={{
+              display:
+                this.state.form_error || this.state.file_error
+                  ? "block"
+                  : "none"
+            }}
+          >
+            エラー：申し訳ありません。もう一度送信してください。
+          </div>
 
           <div
             className="form-group row"
@@ -113,7 +133,7 @@ class AddSequence extends Component {
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.onDescriptionTabClick("text")}
+                  onClick={() => this.setState({ tab: "text" })}
                 >
                   説明テキスト
                 </div>
@@ -124,37 +144,61 @@ class AddSequence extends Component {
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.onDescriptionTabClick("img")}
+                  onClick={() => this.setState({ tab: "img" })}
                 >
                   説明画像
                 </div>
               </div>
             </nav>
             <div className="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
-              {this.state.tab === "text" ? (
-                <div role="tabpanel">
-                  <textarea
-                    className="form-control"
-                    rows="4"
-                    value={this.state.localtext}
-                    onChange={e => {
-                      this.setState({ localtext: e.target.value });
-                    }}
-                    maxLength="1000"
-                  />
-                </div>
-              ) : (
-                <div role="tabpanel">
-                  <input
-                    type="file"
-                    name="pic"
-                    accept="image/*"
-                    onChange={e => {
-                      this.setState({ localimg: e.target.files[0] });
-                    }}
-                  />
-                </div>
-              )}
+              <div
+                role="tabpanel"
+                style={{
+                  display: this.state.tab === "text" ? "block" : "none"
+                }}
+              >
+                <textarea
+                  className="form-control"
+                  rows="4"
+                  value={this.state.localtext}
+                  onChange={e => {
+                    this.setState({
+                      localtext: e.target.value,
+                      localimg: "",
+                      img_url: ""
+                    });
+                  }}
+                  maxLength="1000"
+                />
+              </div>
+              <div
+                role="tabpanel"
+                style={{
+                  display: this.state.tab === "img" ? "block" : "none"
+                }}
+              >
+                <input
+                  type="file"
+                  name="pic"
+                  accept="image/*"
+                  onChange={e => {
+                    var file = e.target.files[0];
+                    var img_url = window.URL.createObjectURL(file);
+                    this.setState({ localimg: file, img_url, localtext: "" });
+                  }}
+                />
+                <br />
+                <img
+                  id="upload"
+                  alt="upload preview"
+                  src={this.state.img_url}
+                  width="50%"
+                  style={{
+                    display: this.state.img_url === "" ? "none" : "block",
+                    marginTop: 10
+                  }}
+                />
+              </div>
             </div>
           </div>
 

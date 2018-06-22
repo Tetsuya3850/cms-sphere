@@ -6,7 +6,8 @@ import { saveToken } from "./helper";
 class Login extends Component {
   state = {
     id: "",
-    password: ""
+    password: "",
+    form_error: false
   };
 
   handleFormSubmit = async e => {
@@ -15,18 +16,21 @@ class Login extends Component {
       id: Number(this.state.id),
       password: this.state.password
     };
-    var { data } = await login(payload);
-    if (data.result === "true") {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${
-        data.api_token
-      }`;
-      saveToken(data);
-      this.props.history.push("/");
+    try {
+      var { data } = await login(payload);
+      if (data.result === "true") {
+        this.setState({ form_error: false });
+        axios.defaults.headers.common["Authorization"] = `Bearer ${
+          data.api_token
+        }`;
+        saveToken(data);
+        this.props.history.push("/");
+      } else {
+        this.setState({ form_error: true });
+      }
+    } catch (e) {
+      console.log(e);
     }
-  };
-
-  clearForm = () => {
-    this.setState({ id: "", password: "" });
   };
 
   render() {
@@ -34,6 +38,13 @@ class Login extends Component {
       <div id="formContainer" className="container card card-body">
         <form onSubmit={this.handleFormSubmit}>
           <h3 style={{ textAlign: "center" }}>ログイン</h3>
+
+          <div
+            className="alert alert-danger"
+            style={{ display: this.state.form_error ? "block" : "none" }}
+          >
+            エラー：IDもしくはパスワードが間違っています。
+          </div>
 
           <div className="form-group">
             <label>ユーザーID</label>

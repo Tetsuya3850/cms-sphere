@@ -4,22 +4,32 @@ import { getScenario, updateScenario } from "./api";
 class EditScenario extends Component {
   state = {
     title: "",
-    credit: ""
+    credit: "",
+    load_error: false,
+    form_error: false
   };
 
   async componentDidMount() {
-    const { data } = await getScenario(this.props.match.params.id);
-    var scenario = data.scenarios[0];
-    this.setState({
-      title: scenario.TITLE,
-      credit: scenario.CREDIT
-    });
+    try {
+      const { data } = await getScenario(this.props.match.params.id);
+      if (data.result !== "true") {
+        this.setState({ load_error: true });
+        return;
+      }
+      var scenario = data.scenarios[0];
+      this.setState({
+        title: scenario.TITLE,
+        credit: scenario.CREDIT
+      });
+    } catch (e) {
+      console.log(e);
+      this.setState({ load_error: true });
+    }
   }
 
   handleFormSubmit = async e => {
     e.preventDefault();
     const payload = {
-      CATEGORY: "CMS",
       TITLE: this.state.title,
       CREDIT: this.state.credit,
       YEAR: "",
@@ -31,12 +41,14 @@ class EditScenario extends Component {
         this.props.match.params.id,
         payload
       );
-      this.props.history.push(`/scenarios/${this.props.match.params.id}`);
-    } catch (e) {
-      if (!e.response) {
-        console.log(e);
-        return;
+      if (data.result === "true") {
+        this.setState({ form_error: false });
+        this.props.history.push(`/scenarios/${this.props.match.params.id}`);
+      } else {
+        this.setState({ form_error: true });
       }
+    } catch (e) {
+      console.log(e);
     }
   };
 
@@ -45,6 +57,20 @@ class EditScenario extends Component {
       <div id="formContainer" className="container card card-body">
         <form onSubmit={this.handleFormSubmit}>
           <h3>シナリオ案</h3>
+
+          <div
+            className="alert alert-danger"
+            style={{ display: this.state.load_error ? "block" : "none" }}
+          >
+            エラー：申し訳ありません。リロードしてください。
+          </div>
+
+          <div
+            className="alert alert-danger"
+            style={{ display: this.state.form_error ? "block" : "none" }}
+          >
+            エラー：申し訳ありません。もう一度送信してください。
+          </div>
 
           <div className="form-group">
             <label>タイトル</label>
