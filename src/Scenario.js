@@ -1,12 +1,13 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import { getSequences } from "./api";
+import { getSequences, getScenario } from "./api";
 import SequenceCard from "./SequenceCard";
 import Loader from "./Loader/Loader";
 
 class Scenario extends Component {
   state = {
     isFetching: false,
+    title: "",
     sequences: [],
     error: false
   };
@@ -14,18 +15,24 @@ class Scenario extends Component {
   async componentDidMount() {
     try {
       this.setState({ isFetching: true });
-      const { data } = await getSequences(this.props.match.params.id);
-      if (data.result === "true") {
-        this.setState({
-          sequences: data.sequences,
-          isFetching: false,
-          error: false
-        });
-      } else {
-        this.setState({ error: true });
+      var { data } = await getScenario(this.props.match.params.id);
+      if (data.result !== "true") {
+        this.setState({ isFetching: false, error: true });
+        return;
       }
+      this.setState({ title: data.scenarios[0].TITLE });
+      var { data } = await getSequences(this.props.match.params.id);
+      if (data.result !== "true") {
+        this.setState({ isFetching: false, error: true });
+        return;
+      }
+      this.setState({
+        sequences: data.sequences,
+        isFetching: false,
+        error: false
+      });
     } catch (e) {
-      this.setState({ error: true });
+      this.setState({ isFetching: false, error: true });
       console.log(e);
     }
   }
@@ -38,35 +45,55 @@ class Scenario extends Component {
   render() {
     return (
       <div className="container">
-        <h2 style={{ textAlign: "center" }}>シナリオ</h2>
-        <Link
-          to={`/sequence/add/${this.props.match.params.id}`}
-          role="button"
-          style={{ color: "white", marginBottom: "10px", marginRight: "10px" }}
-          className="btn btn-primary"
-        >
-          新規シーケンス作成
-        </Link>
-        <Link
-          to={`/scenario/edit/${this.props.match.params.id}`}
-          role="button"
-          style={{ color: "white", marginBottom: "10px" }}
-          className="btn btn-primary"
-        >
-          シナリオ編集
-        </Link>
-
-        <div
-          className="alert alert-danger"
-          style={{ display: this.state.error ? "block" : "none" }}
-        >
-          エラー：申し訳ありません。リロードしてみてください。
-        </div>
-
         {this.state.isFetching ? (
           <Loader />
         ) : (
           <div>
+            <div
+              style={{
+                margin: "auto",
+                width: "30%"
+              }}
+            >
+              <h2
+                style={{
+                  textAlign: "center",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis"
+                }}
+              >
+                {this.state.title}
+              </h2>
+            </div>
+
+            <Link
+              to={`/sequence/add/${this.props.match.params.id}`}
+              role="button"
+              style={{
+                color: "white",
+                marginBottom: "10px",
+                marginRight: "10px"
+              }}
+              className="btn btn-primary"
+            >
+              新規シーケンス作成
+            </Link>
+            <Link
+              to={`/scenario/edit/${this.props.match.params.id}`}
+              role="button"
+              style={{ color: "white", marginBottom: "10px" }}
+              className="btn btn-primary"
+            >
+              シナリオ編集
+            </Link>
+
+            <div
+              className="alert alert-danger"
+              style={{ display: this.state.error ? "block" : "none" }}
+            >
+              エラー：申し訳ありません。リロードしてみてください。
+            </div>
             {this.state.sequences.length !== 0 ? (
               <div>
                 {this.state.sequences.map(sequence => (

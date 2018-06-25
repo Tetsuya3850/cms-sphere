@@ -183,6 +183,8 @@ class AddSequence extends Component {
                   type="file"
                   name="pic"
                   accept="image/*"
+                  data-toggle="tooltip"
+                  title="画像ファイルの大きさは横1024px縦576pxが推奨です"
                   onChange={e => {
                     var file = e.target.files[0];
                     var img_url = window.URL.createObjectURL(file);

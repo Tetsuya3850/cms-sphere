@@ -13,17 +13,31 @@ class ScenarioCard extends Component {
             style={{ display: "flex", justifyContent: "center" }}
           >
             <div
-              className="col-sm-8"
+              className="col-sm-9"
               style={{
                 display: "flex",
                 justifyContent: "space-around",
                 alignItems: "flex-end"
               }}
             >
-              <span style={{ fontSize: "20px" }}>{scenario.TITLE}</span>
-              <span style={{ fontSize: "16px" }}>{`by ${
-                scenario.CREDIT
-              }`}</span>
+              <span
+                style={{
+                  fontSize: "20px",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis"
+                }}
+              >
+                {scenario.TITLE}
+              </span>
+              <span
+                style={{
+                  fontSize: "16px",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis"
+                }}
+              >{`by ${scenario.CREDIT}`}</span>
             </div>
           </div>
 

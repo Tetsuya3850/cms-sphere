@@ -13,7 +13,7 @@ class SequenceCard extends Component {
             style={{ display: "flex", justifyContent: "center" }}
           >
             <div
-              className="col-sm-8"
+              className="col-sm-9"
               style={{
                 display: "flex",
                 justifyContent: "space-around",

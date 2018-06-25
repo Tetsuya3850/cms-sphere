@@ -22,10 +22,10 @@ class Scenarios extends Component {
           error: false
         });
       } else {
-        this.setState({ error: true });
+        this.setState({ isFetching: false, error: true });
       }
     } catch (e) {
-      this.setState({ error: true });
+      this.setState({ isFetching: false, error: true });
       console.log(e);
     }
   }
@@ -38,27 +38,26 @@ class Scenarios extends Component {
   render() {
     return (
       <div className="container">
-        <h2 style={{ textAlign: "center" }}>シナリオ一覧</h2>
-        <Link
-          to={`/scenario/add`}
-          role="button"
-          style={{ color: "white", marginBottom: "10px" }}
-          className="btn btn-primary"
-        >
-          新規作成
-        </Link>
-
-        <div
-          className="alert alert-danger"
-          style={{ display: this.state.error ? "block" : "none" }}
-        >
-          エラー：申し訳ありません。リロードしてみてください。
-        </div>
-
         {this.state.isFetching ? (
           <Loader />
         ) : (
           <div>
+            <h2 style={{ textAlign: "center" }}>シナリオ一覧</h2>
+            <Link
+              to={`/scenario/add`}
+              role="button"
+              style={{ color: "white", marginBottom: "10px" }}
+              className="btn btn-primary"
+            >
+              新規シナリオ作成
+            </Link>
+
+            <div
+              className="alert alert-danger"
+              style={{ display: this.state.error ? "block" : "none" }}
+            >
+              エラー：申し訳ありません。リロードしてみてください。
+            </div>
             {this.state.scenarios.length !== 0 ? (
               <div>
                 {this.state.scenarios.map(scenario => (
