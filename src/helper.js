@@ -1,3 +1,5 @@
+import moment from "moment";
+
 export function getToken() {
   return sessionStorage.getItem("api_token");
 }
@@ -11,5 +13,5 @@ export function removeToken() {
 }
 export function isAuthed() {
   var expiration = sessionStorage.getItem("expiration");
-  return expiration !== null && Date.now() < new Date(expiration).getTime();
+  return expiration !== null && Date.now() < moment(expiration).valueOf();
 }
