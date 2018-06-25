@@ -50,12 +50,10 @@ class EditSequence extends Component {
       SCENARIO_ID: this.state.scenario_id,
       ROTATE_FROM: "",
       ROTATE_TO: `${this.state.longitude},${this.state.latitude}`,
-      ROTATE_SPEED: "",
-      LAYER1_INDEX: "",
+      LAYER1_INDEX: 0,
       LOCAL_TEXT: this.state.localtext,
       LOCAL_TEXT_WHY: "",
       LOCAL_TEXT_HOW: "",
-      LOCAL_IMAGE: this.state.previous_url,
       LOCAL_VIDEO: "",
       LOCAL_SOUND: "",
       TIME: this.state.time

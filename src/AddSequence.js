@@ -24,8 +24,7 @@ class AddSequence extends Component {
       SCENARIO_ID: this.state.scenario_id,
       ROTATE_FROM: "",
       ROTATE_TO: `${this.state.longitude},${this.state.latitude}`,
-      ROTATE_SPEED: "",
-      LAYER1_INDEX: "",
+      LAYER1_INDEX: 0,
       LOCAL_TEXT: this.state.localtext,
       LOCAL_TEXT_WHY: "",
       LOCAL_TEXT_HOW: "",
@@ -38,7 +37,6 @@ class AddSequence extends Component {
       this.setState({ is_sumbitting: true });
       if (this.state.file_error === false) {
         var { data } = await addSequence(payload);
-        console.log(data);
         if (data.result !== "true") {
           this.setState({ form_error: true, is_sumbitting: false });
           return;
