@@ -20,8 +20,24 @@ class SequenceCard extends Component {
                 alignItems: "flex-end"
               }}
             >
-              <span style={{ fontSize: "20px" }}>{sequence.LOCAL_TEXT}</span>
-              <span style={{ fontSize: "16px" }}>{sequence.LAYER1_INDEX}</span>
+              <span style={{ fontSize: "20px" }}>{sequence.LAYER1_INDEX}</span>
+              {sequence.LOCAL_IMAGE !== "" ? (
+                <div style={{ width: "150px" }}>
+                  <img style={{ height: "40px" }} src={sequence.LOCAL_IMAGE} />
+                </div>
+              ) : (
+                <span
+                  style={{
+                    fontSize: "16px",
+                    width: "150px",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis"
+                  }}
+                >
+                  {sequence.LOCAL_TEXT}
+                </span>
+              )}
             </div>
           </div>
 

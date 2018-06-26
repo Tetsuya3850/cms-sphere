@@ -23,6 +23,7 @@ class ScenarioCard extends Component {
               <span
                 style={{
                   fontSize: "20px",
+                  width: "150px",
                   overflow: "hidden",
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis"
@@ -33,6 +34,7 @@ class ScenarioCard extends Component {
               <span
                 style={{
                   fontSize: "16px",
+                  width: "150px",
                   overflow: "hidden",
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis"
