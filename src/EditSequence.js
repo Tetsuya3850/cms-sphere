@@ -247,8 +247,9 @@ class EditSequence extends Component {
 
           <div className="form-group">
             <div className="col-xs-3">
-              <label>時間</label>
+              <label>表示時間(秒)</label>
               <input
+                style={{ width: "20%" }}
                 type="number"
                 min={0}
                 value={this.state.time}
