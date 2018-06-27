@@ -5,6 +5,16 @@ import { Link } from "react-router-dom";
 class SequenceCard extends Component {
   render() {
     const { sequence } = this.props;
+    var global_chocies = [
+      "オリジナル",
+      "ブルーマーブル",
+      "ブルーマーブル",
+      "夜の地球",
+      "夜の地球",
+      "白地図"
+    ];
+    var choice = global_chocies[sequence.LAYER1_INDEX];
+
     return (
       <div className="card card-body">
         <div className="row">
@@ -20,7 +30,7 @@ class SequenceCard extends Component {
                 alignItems: "flex-end"
               }}
             >
-              <span style={{ fontSize: "20px" }}>{sequence.LAYER1_INDEX}</span>
+              <span style={{ fontSize: "20px" }}>{choice}</span>
               {sequence.LOCAL_IMAGE !== "" ? (
                 <div style={{ width: "150px" }}>
                   <img style={{ height: "40px" }} src={sequence.LOCAL_IMAGE} />

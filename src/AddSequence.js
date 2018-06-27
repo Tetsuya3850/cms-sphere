@@ -6,13 +6,17 @@ import ProgressModal from "./ProgressModal";
 class AddSequence extends Component {
   state = {
     scenario_id: this.props.match.params.id,
+    layer1_index: 0,
+    globalimg: "",
+    global_url: "",
     longitude: "",
     latitude: "",
     localtext: "",
     localimg: "",
     img_url: "",
     time: "",
-    tab: "text",
+    global_tab: "preset",
+    local_tab: "text",
     form_error: false,
     file_error: false,
     is_sumbitting: false
@@ -20,11 +24,14 @@ class AddSequence extends Component {
 
   handleFormSubmit = async e => {
     e.preventDefault();
+    if (this.state.globalimg === "" && this.state.layer1_index == 0) {
+      this.setState({ layer1_index: "1" });
+    }
     const payload = {
       SCENARIO_ID: this.state.scenario_id,
       ROTATE_FROM: "",
       ROTATE_TO: `${this.state.longitude},${this.state.latitude}`,
-      LAYER1_INDEX: 0,
+      LAYER1_INDEX: this.state.layer1_index,
       LOCAL_TEXT: this.state.localtext,
       LOCAL_TEXT_WHY: "",
       LOCAL_TEXT_HOW: "",
@@ -42,8 +49,9 @@ class AddSequence extends Component {
           return;
         }
       }
-      if (this.state.localimg !== "") {
-        let fd = new FormData();
+      if (this.state.globalimg !== "" || this.state.localimg !== "") {
+        var fd = new FormData();
+        fd.append("LAYER1", this.state.globalimg);
         fd.append("LOCAL_IMAGE", this.state.localimg);
         var response = await uploadSequenceResource(data.id, fd);
         if (response.data.result !== "true") {
@@ -59,10 +67,30 @@ class AddSequence extends Component {
   };
 
   render() {
+    const global_chocies = [
+      "ブルーマーブル(国境線なし)",
+      "ブルーマーブル(国境線あり)",
+      "夜の地球(国境線なし)",
+      "夜の地球(国境線あり)",
+      "白地図"
+    ];
+
+    const allGlobalChoices = global_chocies.map((g_choice, index) => (
+      <option key={g_choice} value={index + 1}>
+        {g_choice}
+      </option>
+    ));
+
     return (
       <div id="formContainer" className="container card card-body">
         <form onSubmit={this.handleFormSubmit}>
-          <h3>シーケンス案</h3>
+          <h3
+            style={{
+              marginBottom: "20px"
+            }}
+          >
+            シーケンス案
+          </h3>
 
           <div
             className="alert alert-danger"
@@ -74,6 +102,100 @@ class AddSequence extends Component {
             }}
           >
             エラー：申し訳ありません。もう一度送信してください。
+          </div>
+
+          <div className="col-xs-12">
+            <nav>
+              <div
+                className="nav nav-tabs nav-fill"
+                id="nav-tab"
+                role="tablist"
+              >
+                <div
+                  className={
+                    this.state.global_tab === "preset"
+                      ? "nav-item nav-link active"
+                      : "nav-item nav-link"
+                  }
+                  role="tab"
+                  onClick={() => this.setState({ global_tab: "preset" })}
+                >
+                  プリセット
+                </div>
+                <div
+                  className={
+                    this.state.global_tab === "original"
+                      ? "nav-item nav-link active"
+                      : "nav-item nav-link"
+                  }
+                  role="tab"
+                  onClick={() => this.setState({ global_tab: "original" })}
+                >
+                  オリジナル
+                </div>
+              </div>
+            </nav>
+            <div className="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
+              <div
+                role="tabpanel"
+                style={{
+                  display: this.state.global_tab === "preset" ? "block" : "none"
+                }}
+              >
+                <select
+                  className="form-control"
+                  value={this.state.layer1_index}
+                  onChange={e => {
+                    this.global.value = null;
+                    this.setState({
+                      layer1_index: e.target.value,
+                      globalimg: "",
+                      global_url: ""
+                    });
+                  }}
+                >
+                  <option value="0">地球データを選ぶ</option>
+                  {allGlobalChoices}
+                </select>
+              </div>
+              <div
+                role="tabpanel"
+                style={{
+                  display:
+                    this.state.global_tab === "original" ? "block" : "none"
+                }}
+              >
+                <input
+                  ref={node => {
+                    this.global = node;
+                  }}
+                  type="file"
+                  name="pic"
+                  accept="image/*"
+                  data-toggle="tooltip"
+                  title="画像ファイルの大きさは横1024px縦512pxが推奨です"
+                  onChange={e => {
+                    var file = e.target.files[0];
+                    var global_url = window.URL.createObjectURL(file);
+                    this.setState({
+                      globalimg: file,
+                      global_url,
+                      layer1_index: 0
+                    });
+                  }}
+                />
+                <br />
+                <img
+                  alt="upload preview"
+                  src={this.state.global_url}
+                  width="50%"
+                  style={{
+                    display: this.state.global_url === "" ? "none" : "block",
+                    marginTop: 10
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           <div
@@ -130,23 +252,23 @@ class AddSequence extends Component {
               >
                 <div
                   className={
-                    this.state.tab === "text"
+                    this.state.local_tab === "text"
                       ? "nav-item nav-link active"
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.setState({ tab: "text" })}
+                  onClick={() => this.setState({ local_tab: "text" })}
                 >
                   説明テキスト
                 </div>
                 <div
                   className={
-                    this.state.tab === "img"
+                    this.state.local_tab === "img"
                       ? "nav-item nav-link active"
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.setState({ tab: "img" })}
+                  onClick={() => this.setState({ local_tab: "img" })}
                 >
                   説明画像
                 </div>
@@ -156,7 +278,7 @@ class AddSequence extends Component {
               <div
                 role="tabpanel"
                 style={{
-                  display: this.state.tab === "text" ? "block" : "none"
+                  display: this.state.local_tab === "text" ? "block" : "none"
                 }}
               >
                 <textarea
@@ -164,6 +286,7 @@ class AddSequence extends Component {
                   rows="4"
                   value={this.state.localtext}
                   onChange={e => {
+                    this.file.value = null;
                     this.setState({
                       localtext: e.target.value,
                       localimg: "",
@@ -176,10 +299,13 @@ class AddSequence extends Component {
               <div
                 role="tabpanel"
                 style={{
-                  display: this.state.tab === "img" ? "block" : "none"
+                  display: this.state.local_tab === "img" ? "block" : "none"
                 }}
               >
                 <input
+                  ref={node => {
+                    this.file = node;
+                  }}
                   type="file"
                   name="pic"
                   accept="image/*"
@@ -193,7 +319,6 @@ class AddSequence extends Component {
                 />
                 <br />
                 <img
-                  id="upload"
                   alt="upload preview"
                   src={this.state.img_url}
                   width="50%"

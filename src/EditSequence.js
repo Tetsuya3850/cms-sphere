@@ -6,6 +6,10 @@ import ProgressModal from "./ProgressModal";
 class EditSequence extends Component {
   state = {
     scenario_id: "",
+    layer1_index: 0,
+    globalimg: "",
+    global_url: "",
+    previous_global: "",
     longitude: "",
     latitude: "",
     localtext: "",
@@ -13,7 +17,8 @@ class EditSequence extends Component {
     preview_url: "",
     previous_url: "",
     time: "",
-    tab: "text",
+    global_tab: "preset",
+    local_tab: "text",
     load_error: false,
     form_error: false,
     is_sumbitting: false
@@ -30,13 +35,17 @@ class EditSequence extends Component {
       var [longitude, latitude] = sequence.ROTATE_TO.split(",");
       this.setState({
         scenario_id: sequence.SCENARIO_ID,
+        layer1_index: sequence.LAYER1_INDEX,
+        global_url: sequence.LAYER1,
+        previous_global: sequence.LAYER1,
         longitude,
         latitude,
         localtext: sequence.LOCAL_TEXT,
         preview_url: sequence.LOCAL_IMAGE,
         previous_url: sequence.LOCAL_IMAGE,
         time: sequence.TIME,
-        tab: sequence.LOCAL_IMAGE === "" ? "text" : "img"
+        global_tab: sequence.LAYER1 === "" ? "preset" : "original",
+        local_tab: sequence.LOCAL_IMAGE === "" ? "text" : "img"
       });
     } catch (e) {
       console.log(e);
@@ -46,11 +55,14 @@ class EditSequence extends Component {
 
   handleFormSubmit = async e => {
     e.preventDefault();
+    if (this.state.globalimg === "" && this.state.layer1_index == 0) {
+      this.setState({ layer1_index: "1" });
+    }
     const payload = {
       SCENARIO_ID: this.state.scenario_id,
       ROTATE_FROM: "",
       ROTATE_TO: `${this.state.longitude},${this.state.latitude}`,
-      LAYER1_INDEX: 0,
+      LAYER1_INDEX: this.state.layer1_index,
       LOCAL_TEXT: this.state.localtext,
       LOCAL_TEXT_WHY: "",
       LOCAL_TEXT_HOW: "",
@@ -68,17 +80,24 @@ class EditSequence extends Component {
         this.setState({ form_error: true, is_sumbitting: false });
         return;
       }
+      var fd = new FormData();
       if (this.state.localtext !== "" || this.state.localimg !== "") {
-        let fd = new FormData();
         fd.append("LOCAL_IMAGE", this.state.localimg);
-        let response = await uploadSequenceResource(
-          this.props.match.params.id,
-          fd
-        );
-        if (response.data.result !== "true") {
-          this.setState({ file_error: true, is_sumbitting: false });
-          return;
-        }
+      }
+      if (
+        this.state.previous_global === "" ||
+        this.state.globalimg !== "" ||
+        Number(this.state.layer1_index) !== 0
+      ) {
+        fd.append("LAYER1", this.state.globalimg);
+      }
+      let response = await uploadSequenceResource(
+        this.props.match.params.id,
+        fd
+      );
+      if (response.data.result !== "true") {
+        this.setState({ file_error: true, is_sumbitting: false });
+        return;
       }
       this.props.history.push(`/scenarios/${this.state.scenario_id}`);
     } catch (e) {
@@ -88,10 +107,30 @@ class EditSequence extends Component {
   };
 
   render() {
+    const global_chocies = [
+      "ブルーマーブル(国境線なし)",
+      "ブルーマーブル(国境線あり)",
+      "夜の地球(国境線なし)",
+      "夜の地球(国境線あり)",
+      "白地図"
+    ];
+
+    const allGlobalChoices = global_chocies.map((g_choice, index) => (
+      <option key={g_choice} value={index + 1}>
+        {g_choice}
+      </option>
+    ));
+
     return (
       <div id="formContainer" className="container card card-body">
         <form onSubmit={this.handleFormSubmit}>
-          <h3>シーケンス案</h3>
+          <h3
+            style={{
+              marginBottom: "20px"
+            }}
+          >
+            シーケンス案
+          </h3>
 
           <div
             className="alert alert-danger"
@@ -107,6 +146,100 @@ class EditSequence extends Component {
             }}
           >
             エラー：申し訳ありません。もう一度送信してください。
+          </div>
+
+          <div className="col-xs-12">
+            <nav>
+              <div
+                className="nav nav-tabs nav-fill"
+                id="nav-tab"
+                role="tablist"
+              >
+                <div
+                  className={
+                    this.state.global_tab === "preset"
+                      ? "nav-item nav-link active"
+                      : "nav-item nav-link"
+                  }
+                  role="tab"
+                  onClick={() => this.setState({ global_tab: "preset" })}
+                >
+                  プリセット
+                </div>
+                <div
+                  className={
+                    this.state.global_tab === "original"
+                      ? "nav-item nav-link active"
+                      : "nav-item nav-link"
+                  }
+                  role="tab"
+                  onClick={() => this.setState({ global_tab: "original" })}
+                >
+                  オリジナル
+                </div>
+              </div>
+            </nav>
+            <div className="tab-content py-3 px-3 px-sm-0" id="nav-tabContent">
+              <div
+                role="tabpanel"
+                style={{
+                  display: this.state.global_tab === "preset" ? "block" : "none"
+                }}
+              >
+                <select
+                  className="form-control"
+                  value={this.state.layer1_index}
+                  onChange={e => {
+                    this.global.value = null;
+                    this.setState({
+                      layer1_index: e.target.value,
+                      globalimg: "",
+                      global_url: ""
+                    });
+                  }}
+                >
+                  <option value="0">地球データを選ぶ</option>
+                  {allGlobalChoices}
+                </select>
+              </div>
+              <div
+                role="tabpanel"
+                style={{
+                  display:
+                    this.state.global_tab === "original" ? "block" : "none"
+                }}
+              >
+                <input
+                  ref={node => {
+                    this.global = node;
+                  }}
+                  type="file"
+                  name="pic"
+                  accept="image/*"
+                  data-toggle="tooltip"
+                  title="画像ファイルの大きさは横1024px縦512pxが推奨です"
+                  onChange={e => {
+                    var file = e.target.files[0];
+                    var global_url = window.URL.createObjectURL(file);
+                    this.setState({
+                      globalimg: file,
+                      global_url,
+                      layer1_index: 0
+                    });
+                  }}
+                />
+                <br />
+                <img
+                  alt="upload preview"
+                  src={this.state.global_url}
+                  width="50%"
+                  style={{
+                    display: this.state.global_url === "" ? "none" : "block",
+                    marginTop: 10
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           <div
@@ -163,23 +296,23 @@ class EditSequence extends Component {
               >
                 <div
                   className={
-                    this.state.tab === "text"
+                    this.state.local_tab === "text"
                       ? "nav-item nav-link active"
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.setState({ tab: "text" })}
+                  onClick={() => this.setState({ local_tab: "text" })}
                 >
                   説明テキスト
                 </div>
                 <div
                   className={
-                    this.state.tab === "img"
+                    this.state.local_tab === "img"
                       ? "nav-item nav-link active"
                       : "nav-item nav-link"
                   }
                   role="tab"
-                  onClick={() => this.setState({ tab: "img" })}
+                  onClick={() => this.setState({ local_tab: "img" })}
                 >
                   説明画像
                 </div>
@@ -189,7 +322,7 @@ class EditSequence extends Component {
               <div
                 role="tabpanel"
                 style={{
-                  display: this.state.tab === "text" ? "block" : "none"
+                  display: this.state.local_tab === "text" ? "block" : "none"
                 }}
               >
                 <textarea
@@ -210,7 +343,7 @@ class EditSequence extends Component {
               <div
                 role="tabpanel"
                 style={{
-                  display: this.state.tab === "img" ? "block" : "none"
+                  display: this.state.local_tab === "img" ? "block" : "none"
                 }}
               >
                 <input
